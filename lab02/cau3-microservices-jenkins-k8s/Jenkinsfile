@@ -1,0 +1,131 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+    timeout(time: 30, unit: 'MINUTES')
+  }
+
+  environment {
+    REGISTRY      = 'ghcr.io/doanthao013'
+    IMG_A         = "${REGISTRY}/service-a"
+    IMG_B         = "${REGISTRY}/service-b"
+    TAG           = "${env.BUILD_NUMBER}"
+    SONAR_HOST    = 'http://sonarqube:9000'
+    SCANNER_HOME  = tool 'SonarScanner'
+    K8S_NAMESPACE = 'nt548'
+    SVC_DIR       = 'lab02/cau3-microservices-jenkins-k8s'
+  }
+
+  stages {
+
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Unit Tests - Parallel') {
+      parallel {
+        stage('service-a (Node)') {
+          steps {
+            dir("${SVC_DIR}/service-a") {
+              sh 'npm ci'
+              sh 'npm test'
+            }
+          }
+        }
+        stage('service-b (Python)') {
+          steps {
+            dir("${SVC_DIR}/service-b") {
+              sh 'python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt'
+              sh '. .venv/bin/activate && pytest --cov=. --cov-report=xml'
+            }
+          }
+        }
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('SonarQube') {
+          sh "${SCANNER_HOME}/bin/sonar-scanner -Dproject.settings=${SVC_DIR}/sonar/sonar-project.properties"
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 5, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('Build Docker Images - Parallel') {
+      parallel {
+        stage('Build service-a') {
+          steps {
+            dir("${SVC_DIR}/service-a") {
+              sh "docker build -t ${IMG_A}:${TAG} -t ${IMG_A}:latest ."
+            }
+          }
+        }
+        stage('Build service-b') {
+          steps {
+            dir("${SVC_DIR}/service-b") {
+              sh "docker build -t ${IMG_B}:${TAG} -t ${IMG_B}:latest ."
+            }
+          }
+        }
+      }
+    }
+
+    stage('Trivy Image Scan') {
+      steps {
+        sh """
+          trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${IMG_A}:${TAG}
+          trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${IMG_B}:${TAG}
+        """
+      }
+    }
+
+    stage('Push Images') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'registry-creds',
+                                          usernameVariable: 'REG_USER',
+                                          passwordVariable: 'REG_PASS')]) {
+          sh '''
+            echo "$REG_PASS" | docker login $REGISTRY -u "$REG_USER" --password-stdin
+            docker push ${IMG_A}:${TAG} && docker push ${IMG_A}:latest
+            docker push ${IMG_B}:${TAG} && docker push ${IMG_B}:latest
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      when { branch 'main' }
+      steps {
+        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+          sh """
+            kubectl apply -f ${SVC_DIR}/k8s/00-namespace.yaml
+            sed 's|REGISTRY/nt548/service-a:TAG|${IMG_A}:${TAG}|' ${SVC_DIR}/k8s/10-service-a.yaml | kubectl apply -f -
+            sed 's|REGISTRY/nt548/service-b:TAG|${IMG_B}:${TAG}|' ${SVC_DIR}/k8s/20-service-b.yaml | kubectl apply -f -
+            kubectl apply -f ${SVC_DIR}/k8s/30-ingress.yaml
+            kubectl -n ${K8S_NAMESPACE} rollout status deploy/service-a --timeout=180s
+            kubectl -n ${K8S_NAMESPACE} rollout status deploy/service-b --timeout=180s
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker logout || true'
+      cleanWs()
+    }
+    success { echo "Build #${BUILD_NUMBER} succeeded." }
+    failure { echo "Build #${BUILD_NUMBER} failed." }
+  }
+}

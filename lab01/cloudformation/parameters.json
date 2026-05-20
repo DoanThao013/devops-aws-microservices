@@ -1,0 +1,11 @@
+[
+  { "ParameterKey": "NamePrefix",         "ParameterValue": "nt548" },
+  { "ParameterKey": "TemplateBucket",     "ParameterValue": "REPLACE_WITH_S3_BUCKET" },
+  { "ParameterKey": "VpcCidr",            "ParameterValue": "10.0.0.0/16" },
+  { "ParameterKey": "PublicSubnetCidr",   "ParameterValue": "10.0.1.0/24" },
+  { "ParameterKey": "PrivateSubnetCidr",  "ParameterValue": "10.0.2.0/24" },
+  { "ParameterKey": "AvailabilityZone",   "ParameterValue": "ap-southeast-1a" },
+  { "ParameterKey": "MyIp",               "ParameterValue": "1.2.3.4/32" },
+  { "ParameterKey": "KeyName",            "ParameterValue": "nt548-keypair" },
+  { "ParameterKey": "InstanceType",       "ParameterValue": "t2.micro" }
+]

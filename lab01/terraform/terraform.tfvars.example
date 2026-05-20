@@ -1,0 +1,16 @@
+# Copy file này thành terraform.tfvars và điền giá trị thật
+aws_region          = "ap-southeast-1"
+environment         = "dev"
+owner               = "nt548-group-xx"
+name_prefix         = "nt548"
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+availability_zone   = "ap-southeast-1a"
+
+# QUAN TRỌNG: thay bằng IP public của bạn (https://api.ipify.org)
+my_ip = "1.2.3.4/32"
+
+# Tên Key Pair đã tạo sẵn trong AWS Console
+key_name      = "nt548-keypair"
+instance_type = "t2.micro"

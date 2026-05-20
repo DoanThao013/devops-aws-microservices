@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nt548-ingress
+  namespace: nt548
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: nt548.local
+      http:
+        paths:
+          - path: /a
+            pathType: Prefix
+            backend:
+              service:
+                name: service-a
+                port: { number: 3000 }
+          - path: /b
+            pathType: Prefix
+            backend:
+              service:
+                name: service-b
+                port: { number: 5000 }

@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  service-a:
+    build: ./service-a
+    image: nt548/service-a:dev
+    ports:
+      - "3000:3000"
+    environment:
+      SERVICE_B_URL: http://service-b:5000
+    depends_on:
+      - service-b
+
+  service-b:
+    build: ./service-b
+    image: nt548/service-b:dev
+    ports:
+      - "5000:5000"
+
+  sonarqube:
+    image: sonarqube:10-community
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: 'true'
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+
+volumes:
+  sonar_data:

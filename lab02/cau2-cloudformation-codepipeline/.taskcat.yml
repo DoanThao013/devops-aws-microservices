@@ -1,0 +1,23 @@
+project:
+  name: nt548-lab01-cfn
+  owner: nt548-team@example.com
+  regions:
+    - ap-southeast-1
+  s3_bucket: ''   # taskcat sẽ tự tạo nếu để rỗng
+  package_lambda: false
+
+tests:
+  lab01-test:
+    template: ../../lab01/cloudformation/main.yaml
+    parameters:
+      NamePrefix: nt548-tcat
+      TemplateBucket: $[taskcat_autobucket]
+      VpcCidr: 10.50.0.0/16
+      PublicSubnetCidr: 10.50.1.0/24
+      PrivateSubnetCidr: 10.50.2.0/24
+      AvailabilityZone: ap-southeast-1a
+      MyIp: 0.0.0.0/32
+      KeyName: $[taskcat_genuuid]
+      InstanceType: t2.micro
+    regions:
+      - ap-southeast-1
