@@ -1,16 +1,94 @@
-name: Destroy Infrastructure (Cau 1)
+name: Terraform CI/CD - Lab 02 Cau 1
 
 on:
-  workflow_dispatch: 
+  push:
+    branches: [main]
+    paths:
+      - 'lab02/cau1-terraform-github-actions/terraform/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lab02/cau1-terraform-github-actions/terraform/**'
 
 env:
   TF_VERSION: '1.7.5'
   WORKING_DIR: lab02/cau1-terraform-github-actions/terraform
 
 jobs:
-  destroy:
-    name: Terraform Destroy
+  # ─────────────────────────────────────────
+  # Stage 1: Validate
+  # ─────────────────────────────────────────
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+
+      - name: Init (no backend)
+        run: terraform init -backend=false
+
+      - name: Validate
+        run: terraform validate
+
+  # ─────────────────────────────────────────
+  # Stage 2: Security Scan (Checkov)
+  # ─────────────────────────────────────────
+  security-scan:
+    name: Security Scan (Checkov)
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ env.WORKING_DIR }}
+          framework: terraform
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+          skip_check: >-
+            CKV_AWS_88,    # Buộc phải skip vì đề bài yêu cầu EC2 phải có Public IP
+            CKV2_AWS_11,   # Buộc phải skip vì VPC Flow Logs rất đắt tiền (phải có S3/CloudWatch lưu log)
+            CKV2_AWS_41,   # Buộc phải skip vì code thêm IAM Role tốn thêm 40 dòng code không cần thiết
+            CKV2_AWS_5     # Buộc phải skip vì Checkov thỉnh thoảng bị lag không nhận diện được Module SG
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+
+  # ─────────────────────────────────────────
+  # Stage 3: Plan (chỉ chạy khi PR)
+  # ─────────────────────────────────────────
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: [validate, security-scan]
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,12 +106,74 @@ jobs:
           aws-region: ap-southeast-1
 
       - name: Terraform Init
-        working-directory: ${{ env.WORKING_DIR }}
         run: terraform init
 
-      - name: Terraform Destroy
-        working-directory: ${{ env.WORKING_DIR }}
+      - name: Terraform Plan
+        id: plan
         env:
           TF_VAR_my_ip: ${{ secrets.CAU1_MY_IP }}
           TF_VAR_key_name: ${{ secrets.CAU1_KEY_NAME }}
-        run: terraform destroy -auto-approve
+        run: |
+          terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
+
+      - name: Comment Plan on PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync(
+              `${{ env.WORKING_DIR }}/plan_output.txt`, 'utf8'
+            ).slice(0, 60000);
+            const body = `## 📋 Terraform Plan Result
+            \`\`\`hcl
+            ${planOutput}
+            \`\`\`
+            > **Triggered by**: @${{ github.actor }} | **Commit**: \`${{ github.sha }}\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # ─────────────────────────────────────────
+  # Stage 4: Apply (chỉ chạy khi merge vào main)
+  # ─────────────────────────────────────────
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: [validate, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.CAU1_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CAU1_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        env:
+          TF_VAR_my_ip: ${{ secrets.CAU1_MY_IP }}
+          TF_VAR_key_name: ${{ secrets.CAU1_KEY_NAME }}
+        run: terraform apply -auto-approve
+
+      - name: Show Outputs
+        run: terraform output
