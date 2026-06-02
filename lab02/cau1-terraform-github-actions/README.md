@@ -25,5 +25,3 @@ key_name = "nt548-keypair"
 - Quy tắc đã skip: `CKV_AWS_8` (EBS encryption nếu đã set), `CKV_AWS_135` (EBS optimized)
 - Báo cáo SARIF tự động hiển thị tại tab **Security → Code scanning** của repo
 
-## Người phụ trách
-**TV3 — Lab 02 Câu 1 Lead**

@@ -48,5 +48,4 @@ cfn-lint ../../lab01/cloudformation/main.yaml ../../lab01/cloudformation/templat
 taskcat test run -t lab01-test
 ```
 
-## Người phụ trách
-**TV4 — Lab 02 Câu 2 Lead**
+

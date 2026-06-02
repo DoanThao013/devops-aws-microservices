@@ -80,6 +80,4 @@ kubectl apply -f k8s/30-ingress.yaml
 kubectl -n nt548 get pods,svc,ingress
 ```
 
-## Người phụ trách
-**TV5 — Lab 02 Câu 3 Lead** (microservices + Jenkins)
-**TV1 — Hỗ trợ K8s + SonarQube + Trivy**
+
