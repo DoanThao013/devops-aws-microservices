@@ -65,11 +65,15 @@ jobs:
           output_format: sarif
           output_file_path: checkov-results.sarif
           soft_fail: true
+          # DANH SÁCH SKIP CÓ CHỌN LỌC (HỢP LÝ CHO MÔI TRƯỜNG LAB)
           skip_check: >-
-            CKV_AWS_8,
-            CKV_AWS_135,
-            CKV_AWS_24,
-            CKV_AWS_25
+            CKV_AWS_88,    # Bỏ qua: Đề bài yêu cầu tạo Public EC2
+            CKV_AWS_130,   # Bỏ qua: Đề bài yêu cầu Public Subnet (có Auto-assign IP)
+            CKV_AWS_382,   # Bỏ qua: Bài Lab cho phép Outbound 0.0.0.0/0 ra Internet
+            CKV_AWS_126,   # Bỏ qua: Không bật Detailed Monitoring để tránh tốn tiền
+            CKV2_AWS_11,   # Bỏ qua: Không bật VPC Flow Logs để tránh tốn tiền
+            CKV2_AWS_5,    # Bỏ qua: Checkov thường bắt nhầm lỗi SG không được attach
+            CKV2_AWS_41    # Bỏ qua: Bài Lab chưa yêu cầu dùng IAM Role cho EC2
 
       - name: Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
