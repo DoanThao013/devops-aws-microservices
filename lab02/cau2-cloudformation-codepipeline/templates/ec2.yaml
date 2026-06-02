@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Public + Private EC2 Instances'
+
+Parameters:
+  NamePrefix:
+    Type: String
+  AmiId:
+    Type: AWS::EC2::Image::Id
+  InstanceType:
+    Type: String
+    Default: t2.micro
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetId:
+    Type: AWS::EC2::Subnet::Id
+  PublicSgId:
+    Type: AWS::EC2::SecurityGroup::Id
+  PrivateSgId:
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  PublicEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref PublicSubnetId
+      SecurityGroupIds:
+        - !Ref PublicSgId
+      Monitoring: true
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            VolumeSize: 8
+            VolumeType: gp3
+      Tags:
+        - Key: Name
+          Value: !Sub '${NamePrefix}-public-ec2'
+        - Key: Tier
+          Value: public
+
+  PrivateEc2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref PrivateSubnetId
+      SecurityGroupIds:
+        - !Ref PrivateSgId
+      Monitoring: true
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            VolumeSize: 8
+            VolumeType: gp3
+      Tags:
+        - Key: Name
+          Value: !Sub '${NamePrefix}-private-ec2'
+        - Key: Tier
+          Value: private
+
+Outputs:
+  PublicEc2Id:
+    Value: !Ref PublicEc2
+  PublicEc2PublicIp:
+    Value: !GetAtt PublicEc2.PublicIp
+  PrivateEc2Id:
+    Value: !Ref PrivateEc2
+  PrivateEc2PrivateIp:
+    Value: !GetAtt PrivateEc2.PrivateIp

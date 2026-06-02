@@ -1,0 +1,11 @@
+[
+  { "ParameterKey": "NamePrefix",         "ParameterValue": "nt548-nhom03" },
+  { "ParameterKey": "TemplateBucket",     "ParameterValue": "nt548-cfn-templates-nhom03" },
+  { "ParameterKey": "VpcCidr",            "ParameterValue": "10.0.0.0/16" },
+  { "ParameterKey": "PublicSubnetCidr",   "ParameterValue": "10.0.1.0/24" },
+  { "ParameterKey": "PrivateSubnetCidr",  "ParameterValue": "10.0.2.0/24" },
+  { "ParameterKey": "AvailabilityZone",   "ParameterValue": "ap-southeast-1a" },
+  { "ParameterKey": "MyIp",               "ParameterValue": "104.28.156.216/32" }, 
+  { "ParameterKey": "KeyName",            "ParameterValue": "nt548-keypair" },
+  { "ParameterKey": "InstanceType",       "ParameterValue": "t3.micro" }
+]
