@@ -1,0 +1,21 @@
+# Copy file này thành terraform.tfvars rồi điền giá trị thật vào
+# cp terraform.tfvars.example terraform.tfvars
+
+aws_region          = "ap-southeast-1"
+environment         = "dev"
+owner               = "nt548-group-03"       # Đổi thành tên nhóm của bạn
+name_prefix         = "nt548"
+
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+availability_zone   = "ap-southeast-1a"
+
+# Lấy IP của bạn tại: https://checkip.amazonaws.com
+my_ip               = "YOUR_PUBLIC_IP/32"    # VD: "203.113.45.67/32"
+
+# Tên Key Pair đã tạo trên AWS (không có đuôi .pem)
+key_name            = "nt548-key"
+
+instance_type       = "t3.micro"
+ami_id              = ""                     # Để trống = tự lấy Amazon Linux 2 mới nhất
