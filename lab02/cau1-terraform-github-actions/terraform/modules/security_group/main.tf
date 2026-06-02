@@ -39,6 +39,13 @@ resource "aws_security_group" "public_ec2" {
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  egress {
+    description = "Allow SSH outbound to Private Subnet inside VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"] # Mở nội bộ dải mạng VPC của Lab 2
+  }
 
   tags = {
     Name = "${var.name_prefix}-public-ec2-sg"
@@ -76,6 +83,13 @@ resource "aws_security_group" "private_ec2" {
     to_port     = 53
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    description = "Allow SSH outbound to Private Subnet inside VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"] # Mở nội bộ dải mạng VPC của Lab 2
   }
 
   tags = {
