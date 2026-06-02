@@ -8,6 +8,8 @@ resource "aws_vpc" "main" {
   }
 }
 
+# <--- CKV2_AWS_12
 resource "aws_default_security_group" "default" {
   vpc_id = aws_vpc.main.id
+  # Bỏ trống không cấu hình ingress/egress = Khóa mọi kết nối
 }

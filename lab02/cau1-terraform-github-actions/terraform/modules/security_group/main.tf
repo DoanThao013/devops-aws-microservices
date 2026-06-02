@@ -22,12 +22,21 @@ resource "aws_security_group" "public_ec2" {
     cidr_blocks = [var.my_ip]
   }
 
-  # Allow all outbound traffic
+  # Allow HTTPS for curl
   egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "Allow HTTPS for curl"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow DNS resolution
+  egress {
+    description = "Allow DNS resolution"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -51,12 +60,21 @@ resource "aws_security_group" "private_ec2" {
     security_groups = [aws_security_group.public_ec2.id]
   }
 
-  # Allow all outbound (needed for NAT Gateway → Internet)
+  # Allow HTTPS for curl
   egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "Allow HTTPS for curl"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow DNS resolution
+  egress {
+    description = "Allow DNS resolution"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
