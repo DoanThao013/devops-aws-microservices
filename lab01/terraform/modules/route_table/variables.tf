@@ -1,24 +1,29 @@
 variable "name_prefix" {
-  type    = string
-  default = "nt548"
+  description = "Prefix for resource names"
+  type        = string
 }
 
 variable "vpc_id" {
-  type = string
+  description = "VPC ID"
+  type        = string
 }
 
 variable "internet_gateway_id" {
-  type = string
+  description = "Internet Gateway ID"
+  type        = string
 }
 
 variable "nat_gateway_id" {
-  type = string
+  description = "NAT Gateway ID"
+  type        = string
 }
 
 variable "public_subnet_id" {
-  type = string
+  description = "Public Subnet ID"
+  type        = string
 }
 
 variable "private_subnet_id" {
-  type = string
+  description = "Private Subnet ID"
+  type        = string
 }

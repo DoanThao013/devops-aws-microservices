@@ -1,20 +1,24 @@
 variable "name_prefix" {
-  type    = string
-  default = "nt548"
+  description = "Prefix for resource names"
+  type        = string
 }
 
 variable "vpc_id" {
-  type = string
+  description = "VPC ID"
+  type        = string
 }
 
 variable "public_subnet_cidr" {
-  type = string
+  description = "CIDR block for Public Subnet"
+  type        = string
 }
 
 variable "private_subnet_cidr" {
-  type = string
+  description = "CIDR block for Private Subnet"
+  type        = string
 }
 
 variable "availability_zone" {
-  type = string
+  description = "Availability Zone"
+  type        = string
 }

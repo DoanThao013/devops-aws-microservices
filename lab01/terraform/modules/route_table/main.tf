@@ -1,3 +1,4 @@
+# ─── Public Route Table ───────────────────────────────────────────────────────
 resource "aws_route_table" "public" {
   vpc_id = var.vpc_id
 
@@ -11,6 +12,12 @@ resource "aws_route_table" "public" {
   }
 }
 
+resource "aws_route_table_association" "public" {
+  subnet_id      = var.public_subnet_id
+  route_table_id = aws_route_table.public.id
+}
+
+# ─── Private Route Table ──────────────────────────────────────────────────────
 resource "aws_route_table" "private" {
   vpc_id = var.vpc_id
 
@@ -22,11 +29,6 @@ resource "aws_route_table" "private" {
   tags = {
     Name = "${var.name_prefix}-private-rt"
   }
-}
-
-resource "aws_route_table_association" "public" {
-  subnet_id      = var.public_subnet_id
-  route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table_association" "private" {

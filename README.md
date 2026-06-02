@@ -67,13 +67,12 @@ devops-aws-microservices/
 
 | STT | Họ và tên | MSSV | Vai trò |
 |-----|-----------|------|---------|
-| 1 | `<Tên TV1>` | `<MSSV>` | Terraform Lead — Lab 01 (TF) + Lab 02 Câu 1 |
-| 2 | `<Tên TV2>` | `<MSSV>` | CloudFormation Lead — Lab 01 (CFN) + Lab 02 Câu 2 |
-| 3 | `<Tên TV3>` | `<MSSV>` | Jenkins & K8s Lead — Lab 02 Câu 3 (chính) |
-| 4 | `<Tên TV4>` | `<MSSV>` | Microservices & Security Lead — Lab 02 Câu 3 (phụ) |
-| 5 | `<Tên TV5>` | `<MSSV>` | Coordinator & Documentation Lead |
+| 1 | `Nguyễn Lê Như Thuận` | `23521551` | Terraform Lead — Lab 01 (TF) + Lab 02 Câu 1 |
+| 2 | `Nguyễn Cao Thông` | `23521524` | CloudFormation Lead — Lab 01 (CFN) + Lab 02 Câu 2 |
+| 3 | `Dương Thanh Huyền` | `23520659` | Jenkins & K8s Lead — Lab 02 Câu 3 (chính) |
+| 4 | `Võ Trần Việt Tiến` | `23521590` | Microservices & Security Lead — Lab 02 Câu 3 (phụ) |
+| 5 | `Đoàn Thanh Thảo` | `23521466` | Coordinator & Documentation Lead |
 
-Chi tiết phân chia công việc xem [`docs/PHAN_CONG_NHOM.md`](docs/PHAN_CONG_NHOM.md).
 
 ---
 

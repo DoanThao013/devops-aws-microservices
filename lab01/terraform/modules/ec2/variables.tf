@@ -1,33 +1,40 @@
 variable "name_prefix" {
-  type    = string
-  default = "nt548"
+  description = "Prefix for resource names"
+  type        = string
 }
 
 variable "ami_id" {
-  type = string
+  description = "AMI ID for EC2 instances"
+  type        = string
 }
 
 variable "instance_type" {
-  type    = string
-  default = "t2.micro"
+  description = "EC2 instance type"
+  type        = string
+  default     = "t2.micro"
 }
 
 variable "key_name" {
-  type = string
+  description = "EC2 Key Pair name"
+  type        = string
 }
 
 variable "public_subnet_id" {
-  type = string
+  description = "Public Subnet ID"
+  type        = string
 }
 
 variable "private_subnet_id" {
-  type = string
+  description = "Private Subnet ID"
+  type        = string
 }
 
 variable "public_sg_id" {
-  type = string
+  description = "Security Group ID for Public EC2"
+  type        = string
 }
 
 variable "private_sg_id" {
-  type = string
+  description = "Security Group ID for Private EC2"
+  type        = string
 }

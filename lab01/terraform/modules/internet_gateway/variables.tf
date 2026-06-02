@@ -1,8 +1,9 @@
 variable "name_prefix" {
-  type    = string
-  default = "nt548"
+  description = "Prefix for resource names"
+  type        = string
 }
 
 variable "vpc_id" {
-  type = string
+  description = "VPC ID to attach the Internet Gateway"
+  type        = string
 }

@@ -1,4 +1,4 @@
-# Latest Amazon Linux 2 AMI (used when ami_id is empty)
+
 data "aws_ami" "amazon_linux_2" {
   count       = var.ami_id == "" ? 1 : 0
   most_recent = true
@@ -60,13 +60,13 @@ module "security_group" {
 }
 
 module "ec2" {
-  source             = "./modules/ec2"
-  name_prefix        = var.name_prefix
-  ami_id             = local.ami_id
-  instance_type      = var.instance_type
-  key_name           = var.key_name
-  public_subnet_id   = module.subnet.public_subnet_id
-  private_subnet_id  = module.subnet.private_subnet_id
-  public_sg_id       = module.security_group.public_sg_id
-  private_sg_id      = module.security_group.private_sg_id
+  source            = "./modules/ec2"
+  name_prefix       = var.name_prefix
+  ami_id            = local.ami_id
+  instance_type     = var.instance_type
+  key_name          = var.key_name
+  public_subnet_id  = module.subnet.public_subnet_id
+  private_subnet_id = module.subnet.private_subnet_id
+  public_sg_id      = module.security_group.public_sg_id
+  private_sg_id     = module.security_group.private_sg_id
 }

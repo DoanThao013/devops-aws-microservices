@@ -47,7 +47,7 @@ variable "availability_zone" {
 }
 
 variable "my_ip" {
-  description = "Your public IP in CIDR format (e.g. 1.2.3.4/32) — for SSH access"
+  description = "Your public IP in CIDR format (e.g. 1.2.3.4/32) for SSH access to Public EC2"
   type        = string
 }
 
@@ -63,7 +63,7 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "AMI ID for EC2 (Amazon Linux 2). Leave empty to use latest."
+  description = "AMI ID for EC2 (Amazon Linux 2). Leave empty to auto-detect latest."
   type        = string
   default     = ""
 }

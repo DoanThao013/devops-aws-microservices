@@ -6,15 +6,6 @@ terraform {
       version = "~> 5.0"
     }
   }
-
-  # Uncomment after creating S3 bucket nt548-tfstate-<groupID>
-  # backend "s3" {
-  #   bucket         = "nt548-tfstate-<groupID>"
-  #   key            = "lab01/terraform.tfstate"
-  #   region         = "ap-southeast-1"
-  #   dynamodb_table = "nt548-tflock"
-  #   encrypt        = true
-  # }
 }
 
 provider "aws" {

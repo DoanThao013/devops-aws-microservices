@@ -1,3 +1,4 @@
+# Elastic IP for NAT Gateway
 resource "aws_eip" "nat" {
   domain = "vpc"
 
@@ -11,6 +12,9 @@ resource "aws_nat_gateway" "main" {
   subnet_id     = var.public_subnet_id
 
   tags = {
-    Name = "${var.name_prefix}-nat-gateway"
+    Name = "${var.name_prefix}-nat-gw"
   }
+
+  # NAT Gateway requires the EIP to be fully created first
+  depends_on = [aws_eip.nat]
 }

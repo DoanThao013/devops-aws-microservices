@@ -1,8 +1,9 @@
 variable "name_prefix" {
-  type    = string
-  default = "nt548"
+  description = "Prefix for resource names"
+  type        = string
 }
 
 variable "public_subnet_id" {
-  type = string
+  description = "Public Subnet ID where NAT Gateway will be placed"
+  type        = string
 }
