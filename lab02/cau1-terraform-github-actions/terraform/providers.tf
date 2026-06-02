@@ -1,8 +1,8 @@
 terraform {
   required_version = ">= 1.5.0"
-  
+
   backend "s3" {
-    bucket = "nt548-terraform-state-23521551" 
+    bucket = "nt548-terraform-state-23521551"
     key    = "lab02/cau1/terraform.tfstate"
     region = "ap-southeast-1"
   }
