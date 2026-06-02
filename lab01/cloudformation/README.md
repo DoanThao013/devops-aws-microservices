@@ -4,6 +4,7 @@ Thư mục này chứa toàn bộ mã nguồn AWS CloudFormation để tự đ�
 ## Cấu trúc thư mục
 Dự án được phân chia thành các file template độc lập để dễ quản lý và tăng tính tái sử dụng:
 
+```plaintext
 cloudformation/
 ├── main.yaml                # Root file: Gọi và truyền tham số cho các stack con
 ├── parameters.json          # File khai báo các giá trị tham số đầu vào 
@@ -16,6 +17,7 @@ cloudformation/
     ├── route-tables.yaml
     ├── security-groups.yaml
     └── ec2.yaml
+```
 
 ## Điều kiện tiên quyết
 Trước khi chạy mã nguồn, đảm bảo máy trạm đã có sẵn:
@@ -56,7 +58,7 @@ aws cloudformation deploy \
   --region ap-southeast-1
   ```
 
-### (Chờ khoảng 3-5 phút đến khi Terminal báo Successfully created/updated stack).
+#### (Chờ khoảng 3-5 phút đến khi Terminal báo Successfully created/updated stack).
 
 ### Bước 4: lấy các giá trị IP vừa được cấp phát bằng lệnh:
 
