@@ -21,10 +21,10 @@ cloudformation/
 
 ```bash
 # 1. Tạo S3 bucket chứa nested templates
-aws s3 mb s3://nt548-cfn-templates-<groupID> --region ap-southeast-1
+aws s3 mb s3://nt548-cfn-templates-nhom03 --region ap-southeast-1
 
 # 2. Upload nested templates lên S3
-aws s3 cp templates/ s3://nt548-cfn-templates-<groupID>/templates/ --recursive
+aws s3 cp templates/ s3://nt548-cfn-templates-nhom03/templates/ --recursive
 
 # 3. Sửa parameters.json: TemplateBucket, MyIp, KeyName
 # 4. Deploy
@@ -39,11 +39,3 @@ aws cloudformation deploy \
 aws cloudformation describe-stacks \
   --stack-name nt548-lab01 \
   --query 'Stacks[0].Outputs'
-
-# 6. Cleanup
-aws cloudformation delete-stack --stack-name nt548-lab01
-```
-
-## Người phụ trách
-
-**TV2 — CloudFormation Lead**

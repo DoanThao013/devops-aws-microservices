@@ -36,3 +36,5 @@ Outputs:
     Value: !Ref Vpc
   InternetGatewayId:
     Value: !Ref InternetGateway
+
+
