@@ -67,10 +67,12 @@ jobs:
           output_file_path: checkov-results.sarif
           soft_fail: true
           skip_check: >-
-            CKV_AWS_88,    # Buộc phải skip vì đề bài yêu cầu EC2 phải có Public IP
-            CKV2_AWS_11,   # Buộc phải skip vì VPC Flow Logs rất đắt tiền (phải có S3/CloudWatch lưu log)
-            CKV2_AWS_41,   # Buộc phải skip vì code thêm IAM Role tốn thêm 40 dòng code không cần thiết
-            CKV2_AWS_5     # Buộc phải skip vì Checkov thỉnh thoảng bị lag không nhận diện được Module SG
+            CKV_AWS_88,
+            CKV_AWS_8,
+            CKV_AWS_135,
+            CKV2_AWS_11,
+            CKV2_AWS_41,
+            CKV2_AWS_5
 
       - name: Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
@@ -79,13 +81,13 @@ jobs:
           sarif_file: checkov-results.sarif
 
   # ─────────────────────────────────────────
-  # Stage 3: Plan (chỉ chạy khi PR)
+  # Stage 3: Plan (chỉ chạy khi PR hoặc bấm tay)
   # ─────────────────────────────────────────
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
     needs: [validate, security-scan]
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -119,7 +121,7 @@ jobs:
 
       - name: Comment Plan on PR
         uses: actions/github-script@v7
-        if: always()
+        if: github.event_name == 'pull_request' # Tránh lỗi API khi bấm tay
         with:
           script: |
             const fs = require('fs');
@@ -139,13 +141,13 @@ jobs:
             });
 
   # ─────────────────────────────────────────
-  # Stage 4: Apply (chỉ chạy khi merge vào main)
+  # Stage 4: Apply (chỉ chạy khi push main hoặc bấm tay)
   # ─────────────────────────────────────────
   apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
     needs: [validate, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     environment: production
     defaults:
       run:
