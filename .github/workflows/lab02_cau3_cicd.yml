@@ -223,7 +223,7 @@ jobs:
   stage7_deploy:
     name: "Stage 7 — Deploy to Kubernetes"
     runs-on: [self-hosted, windows, minikube]
-    needs: stage7_trivy
+    needs: stage6_trivy
 
     steps:
       - name: Checkout Code
