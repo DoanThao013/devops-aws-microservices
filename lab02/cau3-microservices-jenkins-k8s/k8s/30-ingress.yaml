@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: nt548-ingress
-  namespace: nt548
+  namespace: nt548-gr03
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
