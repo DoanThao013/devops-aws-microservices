@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "Installing dependencies..."
+      - pip install --upgrade pip
+      - pip install "setuptools<82"
+      - pip install cfn-lint taskcat
+
+  pre_build:
+    commands:
+      - echo "Validating templates..."
+      - cd $CODEBUILD_SRC_DIR/lab02/cau2-cloudformation-codepipeline
+      - aws cloudformation validate-template --template-body file://main.yaml
+      - for tpl in templates/*.yaml; do aws cloudformation validate-template --template-body file://$tpl; done
+
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/lab02/cau2-cloudformation-codepipeline
+      - echo "Linting..."
+      - cfn-lint main.yaml templates/*.yaml
+      - echo "Running Taskcat..."
+      - taskcat test run
+      - echo "Packaging..."
+      - aws cloudformation package --template-file main.yaml --s3-bucket $ARTIFACT_BUCKET_NAME --output-template-file packaged.yaml
+
+  post_build:
+    commands:
+      - echo "Build phase completed successfully!"
+
+artifacts:
+  files:
+    - lab02/cau2-cloudformation-codepipeline/packaged.yaml
+  discard-paths: yes
