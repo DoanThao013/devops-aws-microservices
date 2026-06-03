@@ -130,10 +130,10 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
         with:
           args: >
             -Dproject.settings=${{ env.WORK_DIR }}/sonar/sonar-project.properties
@@ -222,7 +222,7 @@ jobs:
   # ══════════════════════════════════════════
   # STAGE 7 — Security Scan (Trivy)
   # ══════════════════════════════════════════
-  
+
   stage7_trivy:
     name: "Stage 7 — Trivy Security Scan"
     runs-on: ubuntu-latest
