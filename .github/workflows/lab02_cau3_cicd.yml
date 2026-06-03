@@ -75,10 +75,9 @@ jobs:
 
   # ══════════════════════════════════════════
   # STAGE 3 — Unit Test
-  # TODO: Tien
   # ══════════════════════════════════════════
   stage3_unit_test:
-    name: "Stage 3 — Unit Test [TODO: Tien]"
+    name: "Stage 3 — Unit Test"
     runs-on: ubuntu-latest
     needs: stage2_build
 
@@ -89,18 +88,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Unit Test Placeholder
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Test Service A (Jest)
+        working-directory: ${{ env.WORK_DIR }}/service-a
         run: |
-          echo "Placeholder. Tien will implement."
-          echo "service-a: Jest (npm test)"
-          echo "service-b: pytest test_app.py"
+          npm install
+          npm test
+          echo "Service A unit tests passed"
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install & Test Service B (pytest)
+        working-directory: ${{ env.WORK_DIR }}/service-b
+        run: |
+          pip install -r requirements.txt pytest pytest-cov
+          pytest test_app.py -v --cov=. --cov-report=xml:coverage.xml
+          echo "Service B unit tests passed"
 
   # ══════════════════════════════════════════
-  # STAGE 4 — SonarQube Analysis
-  # TODO: Tien
+  # STAGE 4 — SonarCloud Analysis
   # ══════════════════════════════════════════
   stage4_sonarqube:
-    name: "Stage 4 — SonarQube Analysis [TODO: Tien]"
+    name: "Stage 4 — SonarQube Analysis"
     runs-on: ubuntu-latest
     needs: stage3_unit_test
 
@@ -110,12 +126,24 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: SonarQube Analysis Placeholder
-        run: |
-          echo "Placeholder. Tien will implement."
-          echo "Config: sonar/sonar-project.properties"
-          echo "Requires: SONAR_TOKEN secret"
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dproject.settings=${{ env.WORK_DIR }}/sonar/sonar-project.properties
+
+      - name: Upload Sonar Report for Quality Gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-report
+          path: .scannerwork/report-task.txt
+          retention-days: 1
 
   # ══════════════════════════════════════════
   # STAGE 5 — Push Images to DockerHub
@@ -166,10 +194,9 @@ jobs:
 
   # ══════════════════════════════════════════
   # STAGE 6 — Quality Gate
-  # TODO: Tien
   # ══════════════════════════════════════════
   stage6_quality_gate:
-    name: "Stage 6 — Quality Gate [TODO: Tien]"
+    name: "Stage 6 — Quality Gate"
     runs-on: ubuntu-latest
     needs: stage5_push
 
@@ -177,17 +204,27 @@ jobs:
       image_tag: ${{ needs.stage5_push.outputs.image_tag }}
 
     steps:
-      - name: Quality Gate Placeholder
-        run: |
-          echo "Placeholder. Tien will implement."
-          echo "Poll SonarCloud API for pass/fail result"
+      - name: Download Sonar Report
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-report
+          path: .scannerwork
+
+      - name: Check SonarCloud Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          scanMetadataReportFile: .scannerwork/report-task.txt
 
   # ══════════════════════════════════════════
   # STAGE 7 — Security Scan (Trivy)
-  # TODO: Tien
   # ══════════════════════════════════════════
+  
   stage7_trivy:
-    name: "Stage 7 — Trivy Security Scan [TODO: Tien]"
+    name: "Stage 7 — Trivy Security Scan"
     runs-on: ubuntu-latest
     needs: stage6_quality_gate
 
@@ -195,11 +232,23 @@ jobs:
       image_tag: ${{ needs.stage6_quality_gate.outputs.image_tag }}
 
     steps:
-      - name: Trivy Placeholder
-        run: |
-          echo "Placeholder. Tien will implement."
-          echo "Scan target: ${{ env.IMAGE_A }}:${{ needs.stage6_quality_gate.outputs.image_tag }}"
-          echo "Scan target: ${{ env.IMAGE_B }}:${{ needs.stage6_quality_gate.outputs.image_tag }}"
+      - name: Run Trivy on Service A
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_A }}:${{ needs.stage6_quality_gate.outputs.image_tag }}
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: Run Trivy on Service B
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_B }}:${{ needs.stage6_quality_gate.outputs.image_tag }}
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
 
   # ══════════════════════════════════════════
   # STAGE 8 — Deploy to Kubernetes (Minikube)
