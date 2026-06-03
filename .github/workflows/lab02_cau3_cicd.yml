@@ -17,8 +17,11 @@ env:
   K8S_NS:   nt548-gr03
 
 jobs:
+
+  # ══════════════════════════════════════════
   # STAGE 1 — Checkout Code
-  stage-1-checkout:
+  # ══════════════════════════════════════════
+  stage1_checkout:
     name: "Stage 1 — Checkout Code"
     runs-on: ubuntu-latest
 
@@ -28,15 +31,17 @@ jobs:
 
       - name: Print Repo Structure
         run: |
-          echo "=== Repo structure ==="
+          echo "Repo structure:"
           find ${{ env.WORK_DIR }} -type f | sort
-          echo "✅ Checkout done — commit: ${{ github.sha }}"
+          echo "Checkout done. Commit: ${{ github.sha }}"
 
+  # ══════════════════════════════════════════
   # STAGE 2 — Build Docker Images
-  stage-2-build:
+  # ══════════════════════════════════════════
+  stage2_build:
     name: "Stage 2 — Build Docker Images"
     runs-on: ubuntu-latest
-    needs: stage-1-checkout
+    needs: stage1_checkout
 
     outputs:
       image_tag: ${{ steps.tag.outputs.value }}
@@ -58,7 +63,7 @@ jobs:
             -t ${{ env.IMAGE_A }}:${{ steps.tag.outputs.value }} \
             -t ${{ env.IMAGE_A }}:latest \
             ${{ env.WORK_DIR }}/service-a/
-          echo "✅ Service A built"
+          echo "Service A built successfully"
 
       - name: Build Service B
         run: |
@@ -66,126 +71,169 @@ jobs:
             -t ${{ env.IMAGE_B }}:${{ steps.tag.outputs.value }} \
             -t ${{ env.IMAGE_B }}:latest \
             ${{ env.WORK_DIR }}/service-b/
-          echo "✅ Service B built"
+          echo "Service B built successfully"
 
-  # STAGE 3
-  stage-3-unit-test:
+  # ══════════════════════════════════════════
+  # STAGE 3 — Unit Test
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage3_unit_test:
     name: "Stage 3 — Unit Test [TODO: Tien]"
     runs-on: ubuntu-latest
-    needs: stage-2-build
+    needs: stage2_build
+
     outputs:
-      image_tag: ${{ needs.stage-2-build.outputs.image_tag }}  # ← truyền tiếp
+      image_tag: ${{ needs.stage2_build.outputs.image_tag }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Unit Test Placeholder
         run: |
-          echo "⏳ Placeholder — Tien will implement"
-          echo "  service-a: Jest (npm test)"
-          echo "  service-b: pytest test_app.py"
+          echo "Placeholder. Tien will implement."
+          echo "service-a: Jest (npm test)"
+          echo "service-b: pytest test_app.py"
 
-  # STAGE 4
-  stage-4-sonarqube:
+  # ══════════════════════════════════════════
+  # STAGE 4 — SonarQube Analysis
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage4_sonarqube:
     name: "Stage 4 — SonarQube Analysis [TODO: Tien]"
     runs-on: ubuntu-latest
-    needs: stage-3-unit-test
+    needs: stage3_unit_test
+
     outputs:
-      image_tag: ${{ needs.stage-3-unit-test.outputs.image_tag }}  # ← truyền tiếp
+      image_tag: ${{ needs.stage3_unit_test.outputs.image_tag }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: SonarQube Analysis Placeholder
         run: |
-          echo "⏳ Placeholder — Tien will implement"
-          echo "  Config: sonar/sonar-project.properties"
-          echo "  Requires: SONAR_TOKEN secret"
+          echo "Placeholder. Tien will implement."
+          echo "Config: sonar/sonar-project.properties"
+          echo "Requires: SONAR_TOKEN secret"
 
-  # STAGE 5
-  stage-5-push:
+  # ══════════════════════════════════════════
+  # STAGE 5 — Push Images to DockerHub
+  # ══════════════════════════════════════════
+  stage5_push:
     name: "Stage 5 — Push Images to DockerHub"
     runs-on: ubuntu-latest
-    needs: stage-4-sonarqube
+    needs: stage4_sonarqube
+
     outputs:
-      image_tag: ${{ needs.stage-4-sonarqube.outputs.image_tag }}  # ← truyền tiếp
+      image_tag: ${{ needs.stage4_sonarqube.outputs.image_tag }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Rebuild Service A
         run: |
           docker build \
-            -t ${{ env.IMAGE_A }}:${{ needs.stage-4-sonarqube.outputs.image_tag }} \
+            -t ${{ env.IMAGE_A }}:${{ needs.stage4_sonarqube.outputs.image_tag }} \
             -t ${{ env.IMAGE_A }}:latest \
             ${{ env.WORK_DIR }}/service-a/
+
       - name: Rebuild Service B
         run: |
           docker build \
-            -t ${{ env.IMAGE_B }}:${{ needs.stage-4-sonarqube.outputs.image_tag }} \
+            -t ${{ env.IMAGE_B }}:${{ needs.stage4_sonarqube.outputs.image_tag }} \
             -t ${{ env.IMAGE_B }}:latest \
             ${{ env.WORK_DIR }}/service-b/
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Push Service A
         run: |
-          docker push ${{ env.IMAGE_A }}:${{ needs.stage-4-sonarqube.outputs.image_tag }}
+          docker push ${{ env.IMAGE_A }}:${{ needs.stage4_sonarqube.outputs.image_tag }}
           docker push ${{ env.IMAGE_A }}:latest
-          echo "✅ Service A pushed → DockerHub"
+          echo "Service A pushed to DockerHub"
+
       - name: Push Service B
         run: |
-          docker push ${{ env.IMAGE_B }}:${{ needs.stage-4-sonarqube.outputs.image_tag }}
+          docker push ${{ env.IMAGE_B }}:${{ needs.stage4_sonarqube.outputs.image_tag }}
           docker push ${{ env.IMAGE_B }}:latest
-          echo "✅ Service B pushed → DockerHub"
+          echo "Service B pushed to DockerHub"
 
-  # STAGE 6
-  stage-6-quality-gate:
+  # ══════════════════════════════════════════
+  # STAGE 6 — Quality Gate
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage6_quality_gate:
     name: "Stage 6 — Quality Gate [TODO: Tien]"
     runs-on: ubuntu-latest
-    needs: stage-5-push
+    needs: stage5_push
+
     outputs:
-      image_tag: ${{ needs.stage-5-push.outputs.image_tag }}  # ← truyền tiếp
+      image_tag: ${{ needs.stage5_push.outputs.image_tag }}
+
     steps:
       - name: Quality Gate Placeholder
         run: |
-          echo "⏳ Placeholder — Tien will implement"
-          echo "  Poll SonarCloud API for pass/fail result"
+          echo "Placeholder. Tien will implement."
+          echo "Poll SonarCloud API for pass/fail result"
 
-  # STAGE 7
-  stage-7-trivy:
+  # ══════════════════════════════════════════
+  # STAGE 7 — Security Scan (Trivy)
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage7_trivy:
     name: "Stage 7 — Trivy Security Scan [TODO: Tien]"
     runs-on: ubuntu-latest
-    needs: stage-6-quality-gate
+    needs: stage6_quality_gate
+
     outputs:
-      image_tag: ${{ needs.stage-6-quality-gate.outputs.image_tag }}  # ← truyền tiếp
+      image_tag: ${{ needs.stage6_quality_gate.outputs.image_tag }}
+
     steps:
       - name: Trivy Placeholder
         run: |
-          echo "⏳ Placeholder — Tien will implement"
-          echo "  Scan: ${{ env.IMAGE_A }}:${{ needs.stage-6-quality-gate.outputs.image_tag }}"
-          echo "  Scan: ${{ env.IMAGE_B }}:${{ needs.stage-6-quality-gate.outputs.image_tag }}"
+          echo "Placeholder. Tien will implement."
+          echo "Scan target: ${{ env.IMAGE_A }}:${{ needs.stage6_quality_gate.outputs.image_tag }}"
+          echo "Scan target: ${{ env.IMAGE_B }}:${{ needs.stage6_quality_gate.outputs.image_tag }}"
 
-  # STAGE 8
-  stage-8-deploy:
+  # ══════════════════════════════════════════
+  # STAGE 8 — Deploy to Kubernetes (Minikube)
+  # Runs on self-hosted runner (has kubectl + minikube)
+  # ══════════════════════════════════════════
+  stage8_deploy:
     name: "Stage 8 — Deploy to Kubernetes"
     runs-on: [self-hosted, windows, minikube]
-    needs: stage-7-trivy
+    needs: stage7_trivy
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Verify Cluster
         shell: powershell
         run: |
+          Write-Host "Minikube Status"
           minikube status
+          Write-Host "Nodes"
           kubectl get nodes
+          Write-Host "Context"
+          kubectl config current-context
+
       - name: Apply Namespace
         shell: powershell
         run: |
           kubectl apply -f ${{ env.WORK_DIR }}/k8s/00-namespace.yaml
-      - name: Patch Image Tags & Apply Deployments
+          Write-Host "Namespace ready: ${{ env.K8S_NS }}"
+
+      - name: Patch Image Tags and Apply Deployments
         shell: powershell
         run: |
-          $TAG  = "${{ needs.stage-7-trivy.outputs.image_tag }}"
+          $TAG  = "${{ needs.stage7_trivy.outputs.image_tag }}"
           $USER = "${{ secrets.DOCKERHUB_USERNAME }}"
           $DIR  = "${{ env.WORK_DIR }}/k8s"
 
@@ -197,12 +245,15 @@ jobs:
             -replace 'REGISTRY/nt548/service-b:TAG', "$USER/service-b:$TAG" |
             kubectl apply -n ${{ env.K8S_NS }} -f -
 
-          Write-Host "✅ Deployments applied — tag: $TAG"
+          Write-Host "Deployments applied with tag: $TAG"
+
       - name: Apply Ingress
         shell: powershell
         run: |
           kubectl apply -f ${{ env.WORK_DIR }}/k8s/30-ingress.yaml `
             -n ${{ env.K8S_NS }}
+          Write-Host "Ingress applied"
+
       - name: Wait for Rollout
         shell: powershell
         run: |
@@ -210,10 +261,19 @@ jobs:
             -n ${{ env.K8S_NS }} --timeout=120s
           kubectl rollout status deployment/service-b `
             -n ${{ env.K8S_NS }} --timeout=120s
+          Write-Host "Both services rolled out successfully"
+
       - name: Verify Deployment
         shell: powershell
         run: |
-          Write-Host "=== Pods ==="
+          Write-Host "Pods"
           kubectl get pods -n ${{ env.K8S_NS }}
-          Write-Host "=== Services ==="
-          kubectl get svc  -n ${{ env.K8S_NS }}
+          Write-Host "Services"
+          kubectl get svc -n ${{ env.K8S_NS }}
+          Write-Host "Image deployed for service-a"
+          kubectl get deployment service-a -n ${{ env.K8S_NS }} `
+            -o jsonpath='{.spec.template.spec.containers[0].image}'
+          Write-Host ""
+          Write-Host "Image deployed for service-b"
+          kubectl get deployment service-b -n ${{ env.K8S_NS }} `
+            -o jsonpath='{.spec.template.spec.containers[0].image}'
