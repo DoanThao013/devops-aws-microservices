@@ -1,7 +1,3 @@
-# .github/workflows/ci-cd.yml
-# NT548 - Lab 02 - Câu 3: CI/CD Pipeline
-# Stages 1,2,5,6: Huyen | Stages 3,4,7,8: Tien (TODO)
-
 name: Microservices CI/CD Pipeline
 
 on:
@@ -9,7 +5,7 @@ on:
     branches: [ main, develop ]
     paths:
       - 'lab02/cau3-microservices-jenkins-k8s/**'
-      - '.github/workflows/ci-cd.yml'
+      - '.github/workflows/lab02_cau3_cicd.yml'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -21,31 +17,47 @@ env:
   K8S_NS:   nt548-gr03
 
 jobs:
-  # ══════════════════════════════════════════════════════
-  # JOB 1 — Build & Push  (Stages 1, 2, 5)
-  # Runs on GitHub-hosted runner — no local machine needed
-  # ══════════════════════════════════════════════════════
-  build-and-push:
-    name: "Stages 1+2+5 — Checkout · Build · Push"
+
+  # ══════════════════════════════════════════
+  # STAGE 1 — Checkout Code
+  # ══════════════════════════════════════════
+  stage-1-checkout:
+    name: "Stage 1 — Checkout Code"
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Print Repo Structure
+        run: |
+          echo "=== Repo structure ==="
+          find ${{ env.WORK_DIR }} -type f | sort
+          echo "✅ Checkout done — commit: ${{ github.sha }}"
+
+  # ══════════════════════════════════════════
+  # STAGE 2 — Build Docker Images
+  # ══════════════════════════════════════════
+  stage-2-build:
+    name: "Stage 2 — Build Docker Images"
+    runs-on: ubuntu-latest
+    needs: stage-1-checkout
 
     outputs:
       image_tag: ${{ steps.tag.outputs.value }}
 
     steps:
-      # ── Stage 1: Checkout ──────────────────────────────
-      - name: "Stage 1 — Checkout Code"
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ── Stage 2: Build ─────────────────────────────────
-      - name: "Stage 2 — Generate Image Tag"
+      - name: Generate Image Tag
         id: tag
         run: |
           TAG=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "value=${TAG}" >> $GITHUB_OUTPUT
-          echo "Tag: ${TAG}"
+          echo "Image tag: ${TAG}"
 
-      - name: "Stage 2 — Build Service A (Node.js)"
+      - name: Build Service A
         run: |
           docker build \
             -t ${{ env.IMAGE_A }}:${{ steps.tag.outputs.value }} \
@@ -53,7 +65,7 @@ jobs:
             ${{ env.WORK_DIR }}/service-a/
           echo "✅ Service A built"
 
-      - name: "Stage 2 — Build Service B (Python)"
+      - name: Build Service B
         run: |
           docker build \
             -t ${{ env.IMAGE_B }}:${{ steps.tag.outputs.value }} \
@@ -61,109 +73,156 @@ jobs:
             ${{ env.WORK_DIR }}/service-b/
           echo "✅ Service B built"
 
-      # ── Stage 3: Unit Test — TODO Tien ─────────────────
-      - name: "Stage 3 — Unit Test [TODO: Tien]"
+  # ══════════════════════════════════════════
+  # STAGE 3 — Unit Test
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage-3-unit-test:
+    name: "Stage 3 — Unit Test [TODO: Tien]"
+    runs-on: ubuntu-latest
+    needs: stage-2-build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Unit Test Placeholder
         run: |
           echo "⏳ Placeholder — Tien will implement"
           echo "  service-a: Jest (npm test)"
           echo "  service-b: pytest test_app.py"
 
-      # ── Stage 4: SonarCloud — TODO Tien ────────────────
-      - name: "Stage 4 — SonarQube Analysis [TODO: Tien]"
+  # ══════════════════════════════════════════
+  # STAGE 4 — SonarQube Analysis
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage-4-sonarqube:
+    name: "Stage 4 — SonarQube Analysis [TODO: Tien]"
+    runs-on: ubuntu-latest
+    needs: stage-3-unit-test
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: SonarQube Analysis Placeholder
         run: |
           echo "⏳ Placeholder — Tien will implement"
           echo "  Config: sonar/sonar-project.properties"
           echo "  Requires: SONAR_TOKEN secret"
 
-      # ── Stage 5: Push to DockerHub ──────────────────────
-      - name: "Stage 5 — Login to DockerHub"
+  # ══════════════════════════════════════════
+  # STAGE 5 — Push Images to DockerHub
+  # ══════════════════════════════════════════
+  stage-5-push:
+    name: "Stage 5 — Push Images to DockerHub"
+    runs-on: ubuntu-latest
+    needs: stage-4-sonarqube
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Rebuild vì mỗi job là môi trường mới
+      - name: Rebuild Service A
+        run: |
+          docker build \
+            -t ${{ env.IMAGE_A }}:${{ needs.stage-2-build.outputs.image_tag }} \
+            -t ${{ env.IMAGE_A }}:latest \
+            ${{ env.WORK_DIR }}/service-a/
+
+      - name: Rebuild Service B
+        run: |
+          docker build \
+            -t ${{ env.IMAGE_B }}:${{ needs.stage-2-build.outputs.image_tag }} \
+            -t ${{ env.IMAGE_B }}:latest \
+            ${{ env.WORK_DIR }}/service-b/
+
+      - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: "Stage 5 — Push Service A"
+      - name: Push Service A
         run: |
-          docker push ${{ env.IMAGE_A }}:${{ steps.tag.outputs.value }}
+          docker push ${{ env.IMAGE_A }}:${{ needs.stage-2-build.outputs.image_tag }}
           docker push ${{ env.IMAGE_A }}:latest
           echo "✅ Service A pushed → DockerHub"
 
-      - name: "Stage 5 — Push Service B"
+      - name: Push Service B
         run: |
-          docker push ${{ env.IMAGE_B }}:${{ steps.tag.outputs.value }}
+          docker push ${{ env.IMAGE_B }}:${{ needs.stage-2-build.outputs.image_tag }}
           docker push ${{ env.IMAGE_B }}:latest
           echo "✅ Service B pushed → DockerHub"
 
-  # ══════════════════════════════════════════════════════
-  # JOB 2 — Quality Gate  (Stage 7)  TODO: Tien
-  # ══════════════════════════════════════════════════════
-  quality-gate:
-    name: "Stage 7 — Quality Gate [TODO: Tien]"
+  # ══════════════════════════════════════════
+  # STAGE 6 — Quality Gate
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage-6-quality-gate:
+    name: "Stage 6 — Quality Gate [TODO: Tien]"
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: stage-5-push
 
     steps:
-      - name: "Stage 7 — Quality Gate Placeholder"
+      - name: Quality Gate Placeholder
         run: |
           echo "⏳ Placeholder — Tien will implement"
-          echo "  Poll SonarCloud API for pass/fail"
+          echo "  Poll SonarCloud API for pass/fail result"
 
-  # ══════════════════════════════════════════════════════
-  # JOB 3 — Security Scan  (Stage 8)  TODO: Tien
-  # ══════════════════════════════════════════════════════
-  security-scan:
-    name: "Stage 8 — Trivy Security Scan [TODO: Tien]"
+  # ══════════════════════════════════════════
+  # STAGE 7 — Security Scan (Trivy)
+  # TODO: Tien
+  # ══════════════════════════════════════════
+  stage-7-trivy:
+    name: "Stage 7 — Trivy Security Scan [TODO: Tien]"
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: stage-6-quality-gate
 
     steps:
-      - name: "Stage 8 — Trivy Placeholder"
+      - name: Trivy Placeholder
         run: |
           echo "⏳ Placeholder — Tien will implement"
-          echo "  Scan: ${{ env.IMAGE_A }}:${{ needs.build-and-push.outputs.image_tag }}"
-          echo "  Scan: ${{ env.IMAGE_B }}:${{ needs.build-and-push.outputs.image_tag }}"
+          echo "  Scan: ${{ env.IMAGE_A }}:${{ needs.stage-2-build.outputs.image_tag }}"
+          echo "  Scan: ${{ env.IMAGE_B }}:${{ needs.stage-2-build.outputs.image_tag }}"
 
-  # ══════════════════════════════════════════════════════
-  # JOB 4 — Deploy to Kubernetes  (Stage 6)
-  # MUST run on self-hosted runner (has kubectl + minikube)
-  # ══════════════════════════════════════════════════════
-  deploy:
-    name: "Stage 6 — Deploy to Kubernetes (Minikube)"
+  # ══════════════════════════════════════════
+  # STAGE 8 — Deploy to Kubernetes (Minikube)
+  # Runs on self-hosted runner (has kubectl + minikube)
+  # ══════════════════════════════════════════
+  stage-8-deploy:
+    name: "Stage 8 — Deploy to Kubernetes"
     runs-on: [self-hosted, windows, minikube]
-    needs: [build-and-push, quality-gate]
-
-    env:
-      TAG: ${{ needs.build-and-push.outputs.image_tag }}
+    needs: stage-7-trivy
 
     steps:
-      - name: "Stage 6 — Checkout"
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: "Stage 6 — Verify Cluster"
+      - name: Verify Cluster
         shell: powershell
         run: |
           Write-Host "=== Minikube Status ==="
           minikube status
           Write-Host "=== Nodes ==="
           kubectl get nodes
-          Write-Host "=== Current Context ==="
+          Write-Host "=== Context ==="
           kubectl config current-context
 
-      - name: "Stage 6 — Apply Namespace"
+      - name: Apply Namespace
         shell: powershell
         run: |
-          # 00-namespace.yaml already defines nt548-gr03
           kubectl apply -f ${{ env.WORK_DIR }}/k8s/00-namespace.yaml
           Write-Host "✅ Namespace ready: ${{ env.K8S_NS }}"
 
-      - name: "Stage 6 — Patch Image Tags & Deploy"
+      - name: Patch Image Tags & Apply Deployments
         shell: powershell
         run: |
-          $TAG  = "${{ env.TAG }}"
+          $TAG  = "${{ needs.stage-2-build.outputs.image_tag }}"
           $USER = "${{ secrets.DOCKERHUB_USERNAME }}"
           $DIR  = "${{ env.WORK_DIR }}/k8s"
 
-          # Replace REGISTRY/nt548/service-a:TAG → dockerhub_user/service-a:sha
           (Get-Content "$DIR/10-service-a.yaml") `
             -replace 'REGISTRY/nt548/service-a:TAG', "$USER/service-a:$TAG" |
             kubectl apply -n ${{ env.K8S_NS }} -f -
@@ -172,33 +231,34 @@ jobs:
             -replace 'REGISTRY/nt548/service-b:TAG', "$USER/service-b:$TAG" |
             kubectl apply -n ${{ env.K8S_NS }} -f -
 
-          Write-Host "✅ Deployments applied with tag: $TAG"
+          Write-Host "✅ Deployments applied — tag: $TAG"
 
-      - name: "Stage 6 — Apply Ingress"
+      - name: Apply Ingress
         shell: powershell
         run: |
           kubectl apply -f ${{ env.WORK_DIR }}/k8s/30-ingress.yaml `
             -n ${{ env.K8S_NS }}
           Write-Host "✅ Ingress applied"
 
-      - name: "Stage 6 — Wait for Rollout"
+      - name: Wait for Rollout
         shell: powershell
         run: |
           kubectl rollout status deployment/service-a `
             -n ${{ env.K8S_NS }} --timeout=120s
           kubectl rollout status deployment/service-b `
             -n ${{ env.K8S_NS }} --timeout=120s
-          Write-Host "✅ Both deployments rolled out"
+          Write-Host "✅ Both services rolled out"
 
-      - name: "Stage 6 — Verify & Print Summary"
+      - name: Verify Deployment
         shell: powershell
         run: |
           Write-Host "=== Pods ==="
           kubectl get pods -n ${{ env.K8S_NS }}
           Write-Host "=== Services ==="
           kubectl get svc  -n ${{ env.K8S_NS }}
-          Write-Host "=== Image Tags Deployed ==="
+          Write-Host "=== Images Deployed ==="
           kubectl get deployment service-a -n ${{ env.K8S_NS }} `
             -o jsonpath='{.spec.template.spec.containers[0].image}'
+          Write-Host ""
           kubectl get deployment service-b -n ${{ env.K8S_NS }} `
             -o jsonpath='{.spec.template.spec.containers[0].image}'
