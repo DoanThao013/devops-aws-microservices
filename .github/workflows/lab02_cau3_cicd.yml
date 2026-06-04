@@ -1,4 +1,4 @@
-name: Microservices CI/CD Pipeline
+name: Microservices CI/CD Pipeline - Lab 02 Cau 3
 
 on:
   push:
