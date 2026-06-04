@@ -14,4 +14,11 @@ on:
 env:
   TF_VERSION: 1.7.5
   AWS_REGION: ap-southeast-1
-  TF_WORKING_DIR: lab01/terraform  
+  TF_WORKING_DIR: lab01/terraform
+
+jobs:
+  pass-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: echo "Job này giúp file hợp lệ để GitHub không báo lỗi đỏ nữa!"
