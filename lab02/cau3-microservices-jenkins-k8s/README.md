@@ -148,11 +148,19 @@ Vào repo > Settings > Secrets and variables > Actions, thêm các secrets sau:
 |---|---|
 | DOCKERHUB_USERNAME | Tên đăng nhập DockerHub |
 | DOCKERHUB_TOKEN | Access token DockerHub |
-| SONAR_TOKEN | Token xác thực SonarCloud (bổ sung sau) |
+| SONAR_TOKEN | Token xác thực SonarCloud |
+
+### Cách tạo DOCKERHUB_TOKEN
+
+Đăng nhập DockerHub > Account Settings > Security > New Access Token.
+
+Đặt tên token, chọn quyền Read/Write/Delete, copy và dán vào GitHub Secrets.
 
 ### Cách tạo SONAR_TOKEN
 
-*(Sẽ bổ sung sau)*
+Đăng nhập SonarCloud > Avatar góc trên phải > My Account > Security > Generate Tokens.
+
+Nhập tên token (VD: `github-actions-token`), chọn loại User Token, copy và dán vào GitHub Secrets.
 
 ---
 
@@ -235,7 +243,7 @@ Truy cập https://hub.docker.com/r/thanhhuyen24/service-a và https://hub.docke
 | Stage | Tên | Mô tả | Runner |
 |---|---|---|---|
 | 1 | Checkout Code | Lấy source code từ GitHub | ubuntu-latest |
-| 2 | Build Docker Images | Build image cho service-a và service-b | ubuntu-latest |
+| 2 | Build Docker Images | Build image cho service-a và service-b, tag theo commit SHA | ubuntu-latest |
 | 3 | Unit Test | Chạy Jest cho service-a, pytest cho service-b | ubuntu-latest |
 | 4 | SonarQube Analysis | Quét chất lượng mã nguồn với SonarCloud | ubuntu-latest |
 | 5 | Push Images to DockerHub | Đẩy images lên DockerHub registry | ubuntu-latest |
@@ -243,4 +251,25 @@ Truy cập https://hub.docker.com/r/thanhhuyen24/service-a và https://hub.docke
 | 7 | Trivy Security Scan | Quét lỗ hổng bảo mật trên Docker images | ubuntu-latest |
 | 8 | Deploy to Kubernetes | Triển khai lên Minikube | self-hosted (Windows) |
 
-> Stages 3, 4, 6, 7: sẽ bổ sung sau.
+### Stage 3 — Unit Test
+
+- **service-a:** Cài dependencies bằng `npm install`, chạy test bằng `npm test` (Jest + supertest).
+- **service-b:** Cài dependencies bằng `pip install -r requirements.txt pytest pytest-cov`, chạy `pytest test_app.py -v --cov=. --cov-report=xml:coverage.xml`. File `coverage.xml` sinh ra sẽ được SonarCloud đọc ở Stage 4.
+- Nếu bất kỳ test nào fail, pipeline dừng ngay và không tiến đến các stage tiếp theo.
+
+### Stage 4 — SonarQube Analysis
+
+- Sử dụng `SonarSource/sonarqube-scan-action@v6` với `fetch-depth: 0` (bắt buộc để SonarCloud đọc được toàn bộ lịch sử Git).
+- Cờ `sonar.qualitygate.wait=true` khiến pipeline chờ SonarCloud xử lý xong rồi mới trả kết quả. Nếu Quality Gate **FAILED**, pipeline dừng lại với exit code 3.
+- Cấu hình project đặt trong `sonar/sonar-project.properties`, token truyền qua biến môi trường `SONAR_TOKEN`.
+
+### Stage 6 — Quality Gate
+
+- Kiểm tra lại trạng thái Quality Gate sau khi SonarCloud hoàn tất phân tích.
+- Nếu kết quả là `ERROR`, stage này báo lỗi và dừng pipeline, ngăn code kém chất lượng tiến đến bước deploy.
+
+### Stage 7 — Trivy Security Scan
+
+- Quét trực tiếp image từ DockerHub với tham số `severity: CRITICAL,HIGH` và `ignore-unfixed: true` (chỉ báo CVE đã có bản vá).
+- `exit-code: 0` — stage chỉ cảnh báo, không dừng pipeline. Trong môi trường production nên đổi thành `exit-code: 1`.
+- Kết quả thực tế: service-a phát hiện 11 lỗ hổng HIGH (đều có bản vá), service-b sạch hoàn toàn (0 CVE).
