@@ -1,0 +1,18 @@
+project:
+  name: nt548-lab02
+  regions:
+    - ap-southeast-1
+
+tests:
+  lab01-test:
+    template: main.yaml
+    parameters:
+      NamePrefix: nt548-tcat
+      TemplateBucket: nt548-cfn-templates-nhom03
+      VpcCidr: 10.50.0.0/16
+      PublicSubnetCidr: 10.50.1.0/24
+      PrivateSubnetCidr: 10.50.2.0/24
+      AvailabilityZone: ap-southeast-1a
+      MyIp: 104.28.166.48/32   
+      KeyName: nt548-keypair     
+      InstanceType: t3.micro
